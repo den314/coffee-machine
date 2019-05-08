@@ -25,7 +25,7 @@ enum CoffeeType {
 
         @Override
         Coffee create(CoffeeRecipe recipe) {
-            new CreateCappuccionoCommand().createCoffee(recipe)
+            new CreateCappuccinoCommand().createCoffee(recipe)
         }
     },
     LATTE{
@@ -80,6 +80,21 @@ enum CoffeeType {
     abstract CoffeeRecipe getRecipe()
 
     abstract Coffee create(CoffeeRecipe recipe)
+
+    Coffee prepare(CoffeeRecipe recipe) {
+        switch (this) {
+            case AMERICANO:
+                return AMERICANO.create(recipe ?: AMERICANO.recipe)
+            case FLAT_WHITE:
+                return FLAT_WHITE.create(recipe ?: FLAT_WHITE.recipe)
+            case CAPPUCCINO:
+                return CAPPUCCINO.create(recipe ?: CAPPUCCINO.recipe)
+            case LATTE:
+                return LATTE.create(recipe ?: LATTE.recipe)
+            default:
+                throw new IllegalArgumentException("unknown coffee type")
+        }
+    }
 }
 
 interface CreateCoffeeCommand {
@@ -102,7 +117,7 @@ class CreateAmericanoCommand implements CreateCoffeeCommand {
     }
 }
 
-class CreateCappuccionoCommand implements CreateCoffeeCommand {
+class CreateCappuccinoCommand implements CreateCoffeeCommand {
 
     @Override
     Coffee createCoffee(CoffeeRecipe recipe) {
@@ -166,22 +181,11 @@ class FlatWhite extends Coffee {
 class CoffeeMachine {
 
     Coffee make(CoffeeType type) {
-        prepareCoffee(type.recipe)
+        type.prepare()
     }
 
     Coffee prepareCoffee(CoffeeRecipe coffeeRecipe) {
-        switch (coffeeRecipe.coffeeType) {
-            case CoffeeType.AMERICANO:
-                return CoffeeType.AMERICANO.create(coffeeRecipe)
-            case CoffeeType.FLAT_WHITE:
-                return CoffeeType.FLAT_WHITE.create(coffeeRecipe)
-            case CoffeeType.CAPPUCCINO:
-                return CoffeeType.CAPPUCCINO.create(coffeeRecipe)
-            case CoffeeType.LATTE:
-                return CoffeeType.LATTE.create(coffeeRecipe)
-            default:
-                throw new IllegalArgumentException("unknown coffee type")
-        }
+        coffeeRecipe.coffeeType.prepare(coffeeRecipe)
     }
 
     Coffee make(CoffeeRecipe userDefinedRecipe) {
@@ -199,24 +203,24 @@ class CoffeeMachine {
     }
 }
 
-coffeMachine = new CoffeeMachine()
-coffee = coffeMachine.make(CoffeeType.FLAT_WHITE)
+coffeeMachine = new CoffeeMachine()
+coffee = coffeeMachine.make(CoffeeType.FLAT_WHITE)
 
 assert coffee.class == FlatWhite
 assert coffee.strength == CoffeeType.FLAT_WHITE.recipe.strength
 
 println coffee
 
-anotherCoffee = coffeMachine.make(
+customCoffee = coffeeMachine.make(
         CoffeeRecipe.builder()
                 .coffeeType(CoffeeType.AMERICANO)
                 .strength(Strength.LIGHT)
                 .millis(500)
                 .build())
 
-assert anotherCoffee.class == Americano
-assert anotherCoffee.strength == Strength.LIGHT
+assert customCoffee.class == Americano
+assert customCoffee.strength == Strength.LIGHT
 
-println anotherCoffee
+println customCoffee
 
 
